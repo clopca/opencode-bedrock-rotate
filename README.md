@@ -89,6 +89,35 @@ plugin once per provider:
 }
 ```
 
+> **Only target providers that actually exist in your config/catalog.** See
+> Troubleshooting below.
+
+## Troubleshooting
+
+### `JSON Parse error: Unexpected identifier "undefined"` on startup / `opencode models`
+
+opencode fails to list providers with something like:
+
+```
+Error: Unexpected error
+JSON Parse error: Unexpected identifier "undefined"
+    at Provider.list (...)
+    at ConfigHttpApi.providers (...)
+```
+
+Cause: this plugin registered its auth loader for a `provider` id that is **not
+present** in your config/catalog, **and** there is a stored credential
+(`auth.json` entry) for that id. opencode then evaluates
+`toPublicInfo(undefined)` for that provider and throws.
+
+Fix:
+
+- Only set `provider` to ids that exist in your `opencode.json` `provider`
+  block (or standard catalog ids like `amazon-bedrock`).
+- If you previously ran `opencode auth login <id>` for a provider you later
+  removed/commented out, remove that leftover entry from
+  `~/.local/share/opencode/auth.json`.
+
 ## Notes on Claude Fable 5 / Mythos 5
 
 Those models require account-level `provider_data_share` data retention. This
