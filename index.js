@@ -105,6 +105,29 @@ function createRotatingFetch(options) {
   }
 }
 
+// Provider ids that always exist in the models.dev catalog, so registering auth
+// for them can never trigger opencode's toPublicInfo(undefined) crash.
+const ALWAYS_IN_CATALOG = new Set(["amazon-bedrock"])
+
+// Best-effort lookup of the provider ids present in the resolved config. Uses
+// the safe `/config` endpoint (not `/config/providers`, which is the one that
+// crashes). Fails open (returns undefined) on any error or timeout.
+async function configuredProviderIds(client) {
+  if (!client || !client.config || typeof client.config.get !== "function") return undefined
+  try {
+    const res = await Promise.race([
+      Promise.resolve(client.config.get()),
+      new Promise((resolve) => setTimeout(() => resolve(undefined), 3000)),
+    ])
+    const cfg = res && (res.data ?? res)
+    const provider = cfg && cfg.provider
+    if (provider && typeof provider === "object") return new Set(Object.keys(provider))
+    return undefined
+  } catch {
+    return undefined
+  }
+}
+
 /**
  * opencode server plugin entrypoint.
  *
@@ -117,8 +140,22 @@ function createRotatingFetch(options) {
  *
  * To rotate for more than one provider id, list the plugin once per provider.
  */
-export const BedrockRotate = async (_input, options) => {
+export const BedrockRotate = async (input, options) => {
   const provider = (options && options.provider) || "amazon-bedrock"
+
+  // Guard against opencode's "JSON Parse error: Unexpected identifier undefined"
+  // crash, which happens when a plugin registers auth for a provider id that is
+  // not in the catalog while a stored credential exists for it. If the provider
+  // isn't configured (and isn't a known catalog id), warn and register nothing.
+  const configured = await configuredProviderIds(input && input.client)
+  if (configured && !configured.has(provider) && !ALWAYS_IN_CATALOG.has(provider)) {
+    console.warn(
+      `[opencode-bedrock-rotate] provider "${provider}" is not defined in your config; ` +
+        `skipping bearer-token rotation for it. Add it under "provider" in opencode.json to enable.`,
+    )
+    return {}
+  }
+
   const rotatingFetch = createRotatingFetch(options)
 
   return {

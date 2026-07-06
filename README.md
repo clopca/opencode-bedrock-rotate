@@ -105,12 +105,17 @@ JSON Parse error: Unexpected identifier "undefined"
     at ConfigHttpApi.providers (...)
 ```
 
-Cause: this plugin registered its auth loader for a `provider` id that is **not
-present** in your config/catalog, **and** there is a stored credential
-(`auth.json` entry) for that id. opencode then evaluates
-`toPublicInfo(undefined)` for that provider and throws.
+Cause: opencode registered auth for a `provider` id that is **not present** in
+your config/catalog, **and** there is a stored credential (`auth.json` entry)
+for that id. opencode then evaluates `toPublicInfo(undefined)` for that provider
+and throws. (This is an opencode-core limitation, not something a plugin can
+intercept once auth is registered.)
 
-Fix:
+This plugin mitigates it: at startup it checks your resolved config and, if the
+target `provider` isn't defined there (and isn't a known catalog id like
+`amazon-bedrock`), it prints a warning and registers nothing instead of causing
+the crash. The check fails open — if the config can't be read it still
+registers — so also follow the fixes below when using custom provider ids:
 
 - Only set `provider` to ids that exist in your `opencode.json` `provider`
   block (or standard catalog ids like `amazon-bedrock`).
