@@ -1,0 +1,35 @@
+{
+  "name": "opencode-bedrock-rotate",
+  "version": "0.1.0",
+  "description": "opencode plugin that rotates multiple Amazon Bedrock bearer tokens across accounts and retries the next token on throttling (429 / ThrottlingException).",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    "./server": "./index.js",
+    ".": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "amazon-bedrock",
+    "bedrock",
+    "aws",
+    "throttling",
+    "rate-limit",
+    "failover"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clopca/opencode-bedrock-rotate.git"
+  },
+  "homepage": "https://github.com/clopca/opencode-bedrock-rotate#readme",
+  "bugs": {
+    "url": "https://github.com/clopca/opencode-bedrock-rotate/issues"
+  },
+  "license": "MIT"
+}
